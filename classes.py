@@ -1,5 +1,7 @@
 import os, json
 from googleapiclient.discovery import build
+
+
 class Channel:
     """
     Класс для работы с каналами сервиса Youtube.
@@ -10,21 +12,48 @@ class Channel:
 
     # создаем специальный объект для работы с API
     youtube = build('youtube', 'v3', developerKey=api_key)
+
     def __init__(self, channel_id: str):
-        self.__channel_id = channel_id                                              # уникальный id канала
-        self.channel = Channel.youtube.channels().list(id=self.channel_id,
-                                      part='snippet,statistics').execute()          # объект с данными канала (сниппеты, статистика)
-        self.channel_info = json.dumps(self.channel, indent=2, ensure_ascii=False)  # преобразуем в читаемый формат
-        self.title = self.channel["items"][0]["snippet"]["title"]                   # заголовок канала
-        self.description = self.channel["items"][0]["snippet"][
-            "description"]                                                          # описание канала
-        self.url = f"https://www.youtube.com/channel/{self.channel_id}"             # ссылка на канал
-        self.subscriberCount = int(self.channel["items"][0]["statistics"][
-            "subscriberCount"])                                                     # количество подписчиков
-        self.videoCount = int(self.channel["items"][0]["statistics"][
-            "videoCount"])                                                          # количество видео на канале
-        self.viewCount = int(self.channel["items"][0]["statistics"][
-            "viewCount"])                                                           # количество просмотров
+        # уникальный id канала
+        self.__channel_id = channel_id
+
+        # объект с данными канала (сниппеты, статистика)
+        self.channel = Channel.youtube.channels().list(
+            id=self.channel_id,
+            part='snippet,statistics').execute()
+
+        # преобразуем в читаемый формат
+        self.channel_info = json.dumps(self.channel,
+                                       indent=2,
+                                       ensure_ascii=False)
+
+        # заголовок канала
+        self.title = self.channel["items"][0]["snippet"][
+            "title"]
+
+        # описание канала
+        self.description = \
+            self.channel["items"][0]["snippet"][
+                "description"]
+
+        # url-ссылка
+        self.url = f"https://www.youtube.com/channel/{self.channel_id}"  # ссылка на канал
+
+        # количество подписчиков
+        self.subscriberCount = int(
+            self.channel["items"][0]["statistics"][
+                "subscriberCount"])
+
+        # количество видео на канале
+        self.videoCount = int(
+            self.channel["items"][0]["statistics"][
+                "videoCount"])
+
+        # количество просмотров
+        self.viewCount = int(
+            self.channel["items"][0]["statistics"][
+                "viewCount"])
+
     def print_info(self):
         """
         Функция, которая выводит информацию по указанному каналу
@@ -44,6 +73,13 @@ class Channel:
 
     def to_json(self, filename="channel.json"):
         """Метод, записывающий информацию о канале в отдельный файл"""
-        data = {"channel": {"id": self.channel_id, "title": self.channel["items"][0]["snippet"]["title"], "description": self.description, "url": self.url, "subscriberCount": self.subscriberCount, "viewCount": self.viewCount, "videoCount": self.videoCount}}
+        data = {"channel": {"id": self.channel_id, "title":
+            self.channel["items"][0]["snippet"]["title"],
+                            "description": self.description,
+                            "url": self.url,
+                            "subscriberCount": self.subscriberCount,
+                            "viewCount": self.viewCount,
+                            "videoCount": self.videoCount}}
         with open(filename, "w", encoding="UTF-8") as file:
-            json.dump(data, file, indent=2, ensure_ascii=False)
+            json.dump(data, file, indent=2,
+                      ensure_ascii=False)
