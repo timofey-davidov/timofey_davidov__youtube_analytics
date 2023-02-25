@@ -54,6 +54,43 @@ class Channel:
             self.channel["items"][0]["statistics"][
                 "viewCount"])
 
+    def __str__(self):
+        """Строковое описание канала"""
+        return f"Youtube-канал: {self.title}"
+
+    def __lt__(self, other):
+        """Сравнение на <"""
+        if isinstance(other, Channel) and self.subscriberCount < other.subscriberCount:
+            return True
+        return False
+
+    def __gt__(self, other):
+        """Сравнение на >"""
+        if isinstance(other, Channel) and self.subscriberCount > other.subscriberCount:
+            return True
+        return False
+
+    def __le__(self, other):
+        """Сравнение на <="""
+        if isinstance(other, Channel) and self.subscriberCount <= other.subscriberCount:
+            return True
+        return False
+
+    def __ge__(self, other):
+        """Сравнение на >="""
+        if isinstance(other, Channel) and self.subscriberCount >= other.subscriberCount:
+            return True
+        return False
+
+    def __add__(self, other):
+        """Сложение подписчиков каналов (исходный канал – ЛЕВЫЙ ОПЕРАНД)"""
+        if isinstance(other, Channel):
+            return other.subscriberCount + self.subscriberCount
+
+    def __radd__(self, other):
+        """Сложение подписчиков каналов (исходный канал – ПРАВЫЙ ОПЕРАНД)"""
+        return self.__add__(other)
+
     def print_info(self):
         """
         Функция, которая выводит информацию по указанному каналу
