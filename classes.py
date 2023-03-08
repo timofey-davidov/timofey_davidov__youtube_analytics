@@ -1,4 +1,4 @@
-import os, json
+import os, json, isodate, datetime
 from googleapiclient.discovery import build
 
 # API-ключ для работы с YouTube: YT_API_KEY скопирован из гугла и вставлен в переменные окружения
@@ -123,12 +123,6 @@ class Video:
     Класс для работы с видео сервиса Youtube.
     """
 
-    # API-ключ для работы с YouTube: YT_API_KEY скопирован из гугла и вставлен в переменные окружения
-    api_key: str = os.getenv("YT_API_KEY")
-
-    # создаем специальный объект для работы с API
-    youtube = build('youtube', 'v3', developerKey=api_key)
-
     def __init__(self, video_id: str, playlist_id: str = None):
         # формируем id видео
         self._video_id = video_id
@@ -143,34 +137,82 @@ class Video:
         self.video_title = self.video_response["items"][0]["snippet"]["title"]
 
         # количество просмотров видео
-        self.view_count: int = self.video_response['items'][0]['statistics']['viewCount']
+        self.video_view_count: int = self.video_response['items'][0]['statistics']['viewCount']
 
         # количество лайков под видео
-        self.like_count: int = self.video_response['items'][0]['statistics']['likeCount']
+        self.video_like_count: int = self.video_response['items'][0]['statistics']['likeCount']
 
         # количество комментариев под видео
-        self.comment_count: int = self.video_response['items'][0]['statistics']['commentCount']
+        self.video_comment_count: int = self.video_response['items'][0]['statistics']['commentCount']
+
+        # ссылка на видео
+        self.video_link: str = f"https://youtu.be/{self._video_id}"
+        
+        if playlist_id is not None:
+            super().__init__(playlist_id)
 
     def __str__(self):
         return self.video_title
-class PLVideo(Video):
-    def __init__(self, video_id: str, playlist_id: str = None):
 
-        super().__init__(video_id)
 
-        # формируем id плейлиста
-        self._playlist_id = playlist_id
-
-        if self._playlist_id is not None:
-
+class PlayList:
+    def __init__(self, playlist_id: str = None):
+        if playlist_id is not None:
+            self._playlist_id = playlist_id
             # объект для работы с данными плейлиста (сниппеты, статистика)
-            self.playlist_response = youtube.playlists().list(id=self._playlist_id, part='snippet', maxResults=50).execute()
+            self.playlist_response = youtube.playlists().list(id=self._playlist_id, part='snippet',
+                                                              maxResults=50).execute()
 
             # преобразуем в читаемый формат
             self.playlist_info = json.dumps(self.playlist_response, indent=2, ensure_ascii=False)
 
             # заголовок плейлиста
             self.playlist_title = self.playlist_response["items"][0]["snippet"]["title"]
+
+            # url-ссылка
+            self.url = f"https://www.youtube.com/playlist?list={self._playlist_id}"  # ссылка на плейлист
+    @property
+    def title(self):
+        return self.playlist_title
+    @property
+    def get_videos_id(self):
+        """
+        Функция для получения id видео в данном плейлисте
+        :return: list
+        """
+        # объект для работы с данными видео плейлиста (контент)
+        playlist_videos = youtube.playlistItems().list(playlistId=self._playlist_id, part='contentDetails', maxResults=50).execute()
+        # преобразуем в читаемый формат
+        self.playlist_videos = json.dumps(self.playlist_response, indent=2, ensure_ascii=False)
+        # получаем все id видеороликов из плейлиста
+        video_ids: list[str] = [video['contentDetails']['videoId'] for video in playlist_videos['items']]
+        return video_ids
+
+    @property
+    def get_videos_duration(self):
+        """
+        Функция для получения продолэительности видео в плейлисте
+        :return:
+        """
+        # объект для работы с данными видео плейлиста (контент с длительностью)
+        video_response = youtube.videos().list(part='contentDetails,statistics', id=','.join(self.get_videos_id)).execute()
+
+        # суммарная длительность видео
+        duration = datetime.timedelta(0)
+
+        # перебор видео и подсчет суммарной длительности
+        for video in video_response['items']:
+            iso_8601_duration = video['contentDetails']['duration']
+            duration += isodate.parse_duration(iso_8601_duration)
+        return duration
+
+    def show_best_video(self):
+        videos_list = [Video(id) for id in self.get_videos_id]
+        return max(videos_list, key=lambda item: item.video_like_count).video_link
+
+class PLVideo(Video, PlayList):
+    def __init__(self, video_id: str, playlist_id: str = None):
+        super().__init__(video_id, playlist_id)
 
     def __str__(self):
         return f"{self.video_title} ({self.playlist_title})"
@@ -181,3 +223,10 @@ if __name__ == '__main__':
     video2 = PLVideo('BBotskuyw_M', 'PL7Ntiz7eTKwrqmApjln9u4ItzhDLRtPuD')
     print(video1)
     print(video2)
+    pl = PlayList('PLguYHBi01DWr4bRWc4uaguASmo7lW4GCb')
+    print(pl.title)
+    print(pl.url)
+    print(pl.get_videos_duration)
+    print(type(pl.get_videos_duration))
+    print(pl.get_videos_duration.total_seconds())
+    print(pl.show_best_video())
