@@ -1,14 +1,23 @@
 import os, json, isodate, datetime
 from googleapiclient.discovery import build
 
-# API-ключ для работы с YouTube: YT_API_KEY скопирован из гугла и вставлен в переменные окружения
-api_key: str = os.getenv("YT_API_KEY")
+class MixinYoutube:
+    """
+    Класс-миксин, возвращающий объект для работы с сервисом youtube
+    """
+    # API-ключ для работы с YouTube: YT_API_KEY скопирован из гугла и вставлен в переменные окружения
+    api_key: str = os.getenv("YT_API_KEY")
 
-# создаем специальный объект для работы с API
-youtube = build('youtube', 'v3', developerKey=api_key)
+    # создаем специальный объект для работы с API
+    youtube = build('youtube', 'v3', developerKey=api_key)
+    def get_service(self):
+        """Метод, возвращающий объект, содержащий ВСЮ информацию о канале из API"""
+        cls = type(self)
+        return cls.youtube
 
 
-class Channel:
+
+class Channel(MixinYoutube):
     """
     Класс для работы с каналами сервиса Youtube.
     """
@@ -18,9 +27,7 @@ class Channel:
         self.__channel_id = channel_id
 
         # объект с данными канала (сниппеты, статистика)
-        self.channel = youtube.channels().list(
-            id=self.channel_id,
-            part='snippet,statistics').execute()
+        self.channel = self.get_service().channels().list(id=self.channel_id, part='snippet,statistics').execute()
 
         # преобразуем в читаемый формат
         self.channel_info = json.dumps(self.channel, indent=2, ensure_ascii=False)
@@ -99,10 +106,6 @@ class Channel:
         """Метод, возвращающий id канала"""
         return self.__channel_id
 
-    @classmethod
-    def get_service(cls):
-        """Метод, возвращающий объект, содержащий ВСЮ информацию о канале из API"""
-        return youtube
 
     def to_json(self, filename="channel.json"):
         """Метод, записывающий информацию о канале в отдельный файл"""
@@ -118,7 +121,7 @@ class Channel:
                       ensure_ascii=False)
 
 
-class Video:
+class Video(MixinYoutube):
     """
     Класс для работы с видео сервиса Youtube.
     """
@@ -128,7 +131,7 @@ class Video:
         self._video_id = video_id
 
         # объект для работы с данными видео (сниппеты, статистика)
-        self.video_response = youtube.videos().list(part='snippet,statistics', id=self._video_id).execute()
+        self.video_response = self.get_service().videos().list(part='snippet,statistics', id=self._video_id).execute()
 
         # преобразуем в читаемый формат
         self.video_info = json.dumps(self.video_response, indent=2, ensure_ascii=False)
@@ -155,12 +158,12 @@ class Video:
         return self.video_title
 
 
-class PlayList:
+class PlayList(MixinYoutube):
     def __init__(self, playlist_id: str = None):
         if playlist_id is not None:
             self._playlist_id = playlist_id
             # объект для работы с данными плейлиста (сниппеты, статистика)
-            self.playlist_response = youtube.playlists().list(id=self._playlist_id, part='snippet',
+            self.playlist_response = self.get_service().playlists().list(id=self._playlist_id, part='snippet',
                                                               maxResults=50).execute()
 
             # преобразуем в читаемый формат
@@ -181,7 +184,7 @@ class PlayList:
         :return: list
         """
         # объект для работы с данными видео плейлиста (контент)
-        playlist_videos = youtube.playlistItems().list(playlistId=self._playlist_id, part='contentDetails', maxResults=50).execute()
+        playlist_videos = self.get_service().playlistItems().list(playlistId=self._playlist_id, part='contentDetails', maxResults=50).execute()
         # преобразуем в читаемый формат
         self.playlist_videos = json.dumps(self.playlist_response, indent=2, ensure_ascii=False)
         # получаем все id видеороликов из плейлиста
@@ -195,7 +198,7 @@ class PlayList:
         :return:
         """
         # объект для работы с данными видео плейлиста (контент с длительностью)
-        video_response = youtube.videos().list(part='contentDetails,statistics', id=','.join(self.get_videos_id)).execute()
+        video_response = self.get_service().videos().list(part='contentDetails,statistics', id=','.join(self.get_videos_id)).execute()
 
         # суммарная длительность видео
         duration = datetime.timedelta(0)
@@ -230,3 +233,6 @@ if __name__ == '__main__':
     print(type(pl.get_videos_duration))
     print(pl.get_videos_duration.total_seconds())
     print(pl.show_best_video())
+    item_1 = Channel("UCMCgOm8GZkHp8zJ6l7_hIuA")
+    item_2 = Channel("UC1eFXmJNkjITxPFWTy6RsWg")
+    print(item_1)
