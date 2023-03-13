@@ -225,9 +225,3 @@ class PLVideo(Video, PlayList):
 
     def __str__(self):
         return f"{self.video_title} ({self.playlist_title})"
-
-
-if __name__ == '__main__':
-    broken_video = Video('broken_vide')
-    print(broken_video.video_title)
-    print(broken_video.video_like_count)
