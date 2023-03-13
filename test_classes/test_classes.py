@@ -16,10 +16,13 @@ def item2():
 def video1():
     return Video('9lO06Zxhu88')
 
-
 @pytest.fixture
 def video2():
     return PLVideo('BBotskuyw_M', 'PL7Ntiz7eTKwrqmApjln9u4ItzhDLRtPuD')
+
+@pytest.fixture
+def video3():
+    return Video('broken_video')
 
 
 @pytest.fixture
@@ -32,17 +35,19 @@ def test_Channel(item1, item2):
     assert item1.url == "https://www.youtube.com/channel/UCMCgOm8GZkHp8zJ6l7_hIuA"
     assert item1.subscriberCount == 10_300_000
     assert item1.videoCount == 165
-    assert item1.viewCount == 1_962_845_375
+    assert item1.viewCount == 1_964_001_481
     item1.to_json()
     assert item1.__str__() == "Youtube-канал: вДудь"
     assert item1.__gt__(item2) == True
     assert item1.__le__(item2) == False
-    assert item1 + item2 == 14_000_000
-    assert item2 + item1 == 14_000_000
+    assert item1 + item2 == 14_010_000
+    assert item2 + item1 == 14_010_000
 
 
-def test_Video(video1):
+def test_Video(video1, video3):
     assert video1.__str__() == "Как устроена IT-столица мира / Russian Silicon Valley (English subs)"
+    assert video3.video_title is None
+    assert video3.video_like_count is None
 
 
 def test_PLVideo(video2):

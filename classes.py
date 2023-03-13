@@ -127,35 +127,41 @@ class Video(MixinYoutube):
     """
 
     def __init__(self, video_id: str, playlist_id: str = None):
-        # формируем id видео
-        self._video_id = video_id
+        try:
+            # формируем id видео
+            self._video_id = video_id
 
-        # объект для работы с данными видео (сниппеты, статистика)
-        self.video_response = self.get_service().videos().list(part='snippet,statistics', id=self._video_id).execute()
+            # объект для работы с данными видео (сниппеты, статистика)
+            self.video_response = self.get_service().videos().list(part='snippet,statistics',
+                                                                   id=self._video_id).execute()
 
-        # преобразуем в читаемый формат
-        self.video_info = json.dumps(self.video_response, indent=2, ensure_ascii=False)
+            # преобразуем в читаемый формат
+            self.video_info = json.dumps(self.video_response, indent=2, ensure_ascii=False)
 
-        # заголовок видео
-        self.video_title = self.video_response["items"][0]["snippet"]["title"]
+            # заголовок видео
+            self.video_title = self.video_response["items"][0]["snippet"]["title"]
 
-        # количество просмотров видео
-        self.video_view_count: int = self.video_response['items'][0]['statistics']['viewCount']
+            # количество просмотров видео
+            self.video_view_count: int = self.video_response['items'][0]['statistics']['viewCount']
 
-        # количество лайков под видео
-        self.video_like_count: int = self.video_response['items'][0]['statistics']['likeCount']
+            # количество лайков под видео
+            self.video_like_count: int = self.video_response['items'][0]['statistics']['likeCount']
 
-        # количество комментариев под видео
-        self.video_comment_count: int = self.video_response['items'][0]['statistics']['commentCount']
+            # количество комментариев под видео
+            self.video_comment_count: int = self.video_response['items'][0]['statistics']['commentCount']
 
-        # ссылка на видео
-        self.video_link: str = f"https://youtu.be/{self._video_id}"
-        
-        if playlist_id is not None:
-            super().__init__(playlist_id)
+            # ссылка на видео
+            self.video_link: str = f"https://youtu.be/{self._video_id}"
+
+            if playlist_id is not None:
+                super().__init__(playlist_id)
+        except:
+            self.video_response = self.video_info = self.video_title = self.video_view_count = self.video_like_count = self.video_comment_count = self.video_link = None
 
     def __str__(self):
         return self.video_title
+
+
 
 
 class PlayList(MixinYoutube):
@@ -219,20 +225,3 @@ class PLVideo(Video, PlayList):
 
     def __str__(self):
         return f"{self.video_title} ({self.playlist_title})"
-
-
-if __name__ == '__main__':
-    video1 = Video('9lO06Zxhu88')
-    video2 = PLVideo('BBotskuyw_M', 'PL7Ntiz7eTKwrqmApjln9u4ItzhDLRtPuD')
-    print(video1)
-    print(video2)
-    pl = PlayList('PLguYHBi01DWr4bRWc4uaguASmo7lW4GCb')
-    print(pl.title)
-    print(pl.url)
-    print(pl.get_videos_duration)
-    print(type(pl.get_videos_duration))
-    print(pl.get_videos_duration.total_seconds())
-    print(pl.show_best_video())
-    item_1 = Channel("UCMCgOm8GZkHp8zJ6l7_hIuA")
-    item_2 = Channel("UC1eFXmJNkjITxPFWTy6RsWg")
-    print(item_1)
